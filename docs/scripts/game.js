@@ -1,4 +1,5 @@
 var nosePos = 50;
+// import THREE from "./scripts/three.module.js"
 
 // --------------------------------------------- //
 // ------- 3D PONG built with Three.JS --------- //
@@ -24,7 +25,7 @@ var paddle1DirY = 0,
   paddleSpeed = 3;
 
 // ball variables
-var ball, paddle1, paddle2;
+var ball, paddle1, paddle2, footerPlane;
 var ballDirX = 1,
   ballDirY = 1,
   ballSpeed = 2;
@@ -38,6 +39,15 @@ var maxScore = 7;
 // set opponent reflexes (0 - easiest, 1 - hardest)
 var difficulty = 0.2;
 
+
+var canvasCtx, texture, img;
+// texture.needsUpdate = true;
+
+var planeWidth = fieldWidth,
+    planeHeight = fieldHeight,
+    planeQuality = 10;
+
+
 // ------------------------------------- //
 // ------- GAME FUNCTIONS -------------- //
 // ------------------------------------- //
@@ -50,7 +60,7 @@ function setup() {
   // now reset player and opponent scores
   score1 = 0;
   score2 = 0;
-
+  console.log("in setup")
   // set up all the 3D objects in the scene
   createScene();
 
@@ -70,6 +80,7 @@ function createScene() {
     FAR = 10000;
 
   var c = document.getElementById("gameCanvas");
+
 
   // create a WebGL renderer, camera
   // and a scene
@@ -92,9 +103,9 @@ function createScene() {
   c.appendChild(renderer.domElement);
 
   // set up the playing surface plane
-  var planeWidth = fieldWidth,
-    planeHeight = fieldHeight,
-    planeQuality = 10;
+  // var planeWidth = fieldWidth,
+  //   planeHeight = fieldHeight,
+  //   planeQuality = 10;
 
   // create the paddle1's material
   var paddle1Material = new THREE.MeshLambertMaterial({
@@ -107,6 +118,9 @@ function createScene() {
   // create the plane's material
   var planeMaterial = new THREE.MeshLambertMaterial({
     color: 0x4bd121,
+  });
+  var footerPlaneMaterial = new THREE.MeshLambertMaterial({
+    color: 0x534d0d,
   });
   // create the table's material
   var tableMaterial = new THREE.MeshLambertMaterial({
@@ -136,9 +150,79 @@ function createScene() {
   scene.add(plane);
   plane.receiveShadow = true;
 
+
+  // const videoElement = document.getElementsByClassName("input_video")[0];
+  // console.log(videoElement)
+  // const canvasElement = document.getElementsByClassName("output_canvas")[0];
+  // const imgNew = new Image();
+  // imgNew.crossOrigin = "anonymous"
+  // imgNew.src = document.getElementsByClassName("output_canvas")[0].toDataURL()
+  // console.log("image", imgNew)
+  // texture = canvasCreation();
+  canvasCtx = document.getElementsByClassName("output_canvas")[0].getContext("2d");
+  texture = new THREE.CanvasTexture(canvasCtx.canvas);
+  console.log("in scene")
+  texture.needsUpdate = true;
+  img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
+    // map:THREE.ImageUtils.loadTexture('https://i.imgur.com/SyrWRv1.jpeg')
+    // map:THREE.ImageUtils.loadTexture(imgNew)
+    map: texture,
+  });
+  // texture.needsUpdate = true;
+
+
+  footerPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      planeWidth * 0.05, 
+      planeHeight *0.1,
+      planeQuality*0.5,
+      planeQuality*0.5
+    ),
+
+    img
+  );
+  
+  // footerPlane.position.x = -200
+  footerPlane.rotation.z = -Math.PI / 2;
+  scene.add(footerPlane);
+  footerPlane.receiveShadow = false;
+
+  // const video = document.getElementById( 'videoElement' );
+  // const texture = new THREE.VideoTexture( video );
+  // scene.add(texture)
+
+  // const texture = new THREE.TextureLoader().load( 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/2294472375_24a3b8ef46_o.jpg' );
+  // const material = new THREE.MeshBasicMaterial();
+  // material.map = texture
+
+  // mesh = new THREE.Mesh( footerPlane, material );
+
+  // scene.add( mesh );
+  // var texture = new THREE.TextureLoader().load( './images/test.jpg' );
+  // var planeMaterial = new THREE.MeshBasicMaterial( { map: texture } );
+  //var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+  // var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  
+  // footerPlaneNew =  new THREE.Mesh(footerPlane, planeMaterial);
+
+
+  // var loader = new THREE.TextureLoader();
+  // loader.crossOrigin = true;
+  // var backgroundMesh = new THREE.Mesh( 
+  //   new THREE.PlaneGeometry(2, 2, 0),
+  //   new THREE.MeshBasicMaterial({
+  //        map: texture
+  //   }));
+
+  // footerPlane.position.x = -200
+  // scene.add(footerPlane);
+  // footerPlane.receiveShadow = false;
+
+  
+
   var table = new THREE.Mesh(
-    new THREE.CubeGeometry(
-      planeWidth * 1.05, // this creates the feel of a billiards table, with a lining
+    new THREE.BoxGeometry(
+      planeWidth * 1.75, // this creates the feel of a billiards table, with a lining
       planeHeight * 1.03,
       100, // an arbitrary depth, the camera can't see much of it anyway
       planeQuality,
@@ -187,7 +271,7 @@ function createScene() {
   paddleQuality = 1;
 
   paddle1 = new THREE.Mesh(
-    new THREE.CubeGeometry(
+    new THREE.BoxGeometry(
       paddleWidth,
       paddleHeight,
       paddleDepth,
@@ -205,7 +289,7 @@ function createScene() {
   paddle1.castShadow = true;
 
   paddle2 = new THREE.Mesh(
-    new THREE.CubeGeometry(
+    new THREE.BoxGeometry(
       paddleWidth,
       paddleHeight,
       paddleDepth,
@@ -222,19 +306,24 @@ function createScene() {
   paddle2.receiveShadow = true;
   paddle2.castShadow = true;
 
+  footerPlane.receiveShadow = true;
+  footerPlane.castShadow = true;
+
   // set paddles on each side of the table
   paddle1.position.x = -fieldWidth / 2 + paddleWidth;
   paddle2.position.x = fieldWidth / 2 - paddleWidth;
+  footerPlane.position.x = -fieldWidth / 2 - 15;
 
   // lift paddles over playing surface
   paddle1.position.z = paddleDepth;
   paddle2.position.z = paddleDepth;
+  footerPlane.position.z = paddleDepth;
 
   // we iterate 10x (5x each side) to create pillars to show off shadows
   // this is for the pillars on the left
   for (var i = 0; i < 5; i++) {
     var backdrop = new THREE.Mesh(
-      new THREE.CubeGeometry(30, 30, 300, 1, 1, 1),
+      new THREE.BoxGeometry(30, 30, 300, 1, 1, 1),
 
       pillarMaterial
     );
@@ -250,7 +339,7 @@ function createScene() {
   // this is for the pillars on the right
   for (var i = 0; i < 5; i++) {
     var backdrop = new THREE.Mesh(
-      new THREE.CubeGeometry(30, 30, 300, 1, 1, 1),
+      new THREE.BoxGeometry(30, 30, 300, 1, 1, 1),
 
       pillarMaterial
     );
@@ -266,7 +355,7 @@ function createScene() {
   // finally we finish by adding a ground plane
   // to show off pretty shadows
   var ground = new THREE.Mesh(
-    new THREE.CubeGeometry(1000, 1000, 3, 1, 1, 1),
+    new THREE.BoxGeometry(1000, 1000, 3, 1, 1, 1),
 
     groundMaterial
   );
@@ -301,15 +390,27 @@ function createScene() {
 
 function draw() {
   // draw THREE.JS scene
+
+  canvasCtx = document.getElementsByClassName("output_canvas")[0].getContext("2d");
+  texture = new THREE.CanvasTexture(canvasCtx.canvas);
+  console.log("in draw")
+  texture.needsUpdate = true;
+  img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
+    map: texture,
+  });
+  footerPlane.material = img;
+  // footerPlane.material.color.setHex(0xff9a00)
   renderer.render(scene, camera);
+
   // loop draw function call
   requestAnimationFrame(draw);
-
+  
   ballPhysics();
   paddlePhysics();
   cameraPhysics();
   playerPaddleMovement();
   opponentPaddleMovement();
+  footerPlaneMovement();
 }
 
 function ballPhysics() {
@@ -398,8 +499,9 @@ function playerPaddleMovement() {
     100,
     0
   );
+
     var diff = Math.abs(paddlePos - nosePos);
-  console.log(diff.toFixed(2), nosePos.toFixed(2), paddlePos.toFixed(2));
+  // console.log(diff.toFixed(2), nosePos.toFixed(2), paddlePos.toFixed(2));
   // move left
   if (diff > 1 && nosePos < paddlePos) {
     // if paddle is not touching the side of table
@@ -438,6 +540,58 @@ function playerPaddleMovement() {
   paddle1.scale.z += (1 - paddle1.scale.z) * 0.2;
   paddle1.position.y += paddle1DirY;
 }
+
+function footerPlaneMovement() {
+  var paddlePos = map(
+    footerPlane.position.y,
+    -90,
+    90,
+    100,
+    0
+  );
+
+    var diff = Math.abs(paddlePos - nosePos);
+  // console.log(diff.toFixed(2), nosePos.toFixed(2), paddlePos.toFixed(2));
+  // move left
+  if (diff > 1 && nosePos < paddlePos) {
+    // if paddle is not touching the side of table
+    // we move
+    if (footerPlane.position.y < fieldHeight * 0.45) {
+      footerPlaneDirY = paddleSpeed * 0.5;
+    }
+    // else we don't move and stretch the paddle
+    // to indicate we can't move
+    else {
+      footerPlaneDirY = 0;
+      footerPlane.scale.z += (10 - footerPlane.scale.z) * 0.2;
+    }
+  }
+  // move right
+  else if (diff > 1 && nosePos > paddlePos) {
+    // if paddle is not touching the side of table
+    // we move
+    if (footerPlane.position.y > -fieldHeight * 0.45) {
+      footerPlaneDirY = -paddleSpeed * 0.5;
+    }
+    // else we don't move and stretch the paddle
+    // to indicate we can't move
+    else {
+      footerPlaneDirY = 0;
+      footerPlane.scale.z += (10 - footerPlane.scale.z) * 0.2;
+    }
+  }
+  // else don't move paddle
+  else {
+    // stop the paddle
+    footerPlaneDirY = 0;
+  }
+
+  footerPlane.scale.y += (1 - footerPlane.scale.y) * 0.2;
+  footerPlane.scale.z += (1 - footerPlane.scale.z) * 0.2;
+  footerPlane.position.y += footerPlaneDirY;
+}
+
+
 
 // Handles camera and lighting logic
 function cameraPhysics() {
