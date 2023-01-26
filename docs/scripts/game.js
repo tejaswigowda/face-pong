@@ -60,7 +60,7 @@ function setup() {
   // now reset player and opponent scores
   score1 = 0;
   score2 = 0;
-  console.log("in setup")
+  // console.log("in setup")
   // set up all the 3D objects in the scene
   createScene();
 
@@ -119,9 +119,6 @@ function createScene() {
   var planeMaterial = new THREE.MeshLambertMaterial({
     color: 0x4bd121,
   });
-  var footerPlaneMaterial = new THREE.MeshLambertMaterial({
-    color: 0x534d0d,
-  });
   // create the table's material
   var tableMaterial = new THREE.MeshLambertMaterial({
     color: 0x111111,
@@ -151,72 +148,34 @@ function createScene() {
   plane.receiveShadow = true;
 
 
-  // const videoElement = document.getElementsByClassName("input_video")[0];
-  // console.log(videoElement)
-  // const canvasElement = document.getElementsByClassName("output_canvas")[0];
-  // const imgNew = new Image();
-  // imgNew.crossOrigin = "anonymous"
-  // imgNew.src = document.getElementsByClassName("output_canvas")[0].toDataURL()
-  // console.log("image", imgNew)
-  // texture = canvasCreation();
   canvasCtx = document.getElementsByClassName("output_canvas")[0].getContext("2d");
   texture = new THREE.CanvasTexture(canvasCtx.canvas);
-  console.log("in scene")
+  // console.log("in scene")
   texture.needsUpdate = true;
+
+  const footerPlaneMaterial = new THREE.MeshBasicMaterial({
+    map: texture
+  });
+
+  const footerPlaneGeometry = new THREE.PlaneGeometry(
+    planeWidth * 0.05, 
+    planeHeight *0.1,
+    planeQuality*0.5,
+    planeQuality*0.5
+  )
+
   img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
-    // map:THREE.ImageUtils.loadTexture('https://i.imgur.com/SyrWRv1.jpeg')
-    // map:THREE.ImageUtils.loadTexture(imgNew)
     map: texture,
   });
-  // texture.needsUpdate = true;
 
-
-  footerPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(
-      planeWidth * 0.05, 
-      planeHeight *0.1,
-      planeQuality*0.5,
-      planeQuality*0.5
-    ),
-
-    img
-  );
+  footerPlane = new THREE.Mesh(footerPlaneGeometry, footerPlaneMaterial);
   
-  // footerPlane.position.x = -200
+
   footerPlane.rotation.z = -Math.PI / 2;
+  footerPlane.rotation.x = -Math.PI;
   scene.add(footerPlane);
   footerPlane.receiveShadow = false;
 
-  // const video = document.getElementById( 'videoElement' );
-  // const texture = new THREE.VideoTexture( video );
-  // scene.add(texture)
-
-  // const texture = new THREE.TextureLoader().load( 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/2294472375_24a3b8ef46_o.jpg' );
-  // const material = new THREE.MeshBasicMaterial();
-  // material.map = texture
-
-  // mesh = new THREE.Mesh( footerPlane, material );
-
-  // scene.add( mesh );
-  // var texture = new THREE.TextureLoader().load( './images/test.jpg' );
-  // var planeMaterial = new THREE.MeshBasicMaterial( { map: texture } );
-  //var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
-  // var plane = new THREE.Mesh(planeGeometry, planeMaterial);
-  
-  // footerPlaneNew =  new THREE.Mesh(footerPlane, planeMaterial);
-
-
-  // var loader = new THREE.TextureLoader();
-  // loader.crossOrigin = true;
-  // var backgroundMesh = new THREE.Mesh( 
-  //   new THREE.PlaneGeometry(2, 2, 0),
-  //   new THREE.MeshBasicMaterial({
-  //        map: texture
-  //   }));
-
-  // footerPlane.position.x = -200
-  // scene.add(footerPlane);
-  // footerPlane.receiveShadow = false;
 
   
 
@@ -390,21 +349,20 @@ function createScene() {
 
 function draw() {
   // draw THREE.JS scene
-
-  canvasCtx = document.getElementsByClassName("output_canvas")[0].getContext("2d");
+  canvasCtx = document.getElementsByClassName("output_canvas")[0].getContext("2d");  
   texture = new THREE.CanvasTexture(canvasCtx.canvas);
-  console.log("in draw")
+  // texture.wrapS = THREE.MirroredRepeatWrapping;
+  // console.log("in draw")
   texture.needsUpdate = true;
   img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
     map: texture,
   });
   footerPlane.material = img;
-  // footerPlane.material.color.setHex(0xff9a00)
+  footerPlane.material.side = THREE.BackSide
   renderer.render(scene, camera);
 
   // loop draw function call
   requestAnimationFrame(draw);
-  
   ballPhysics();
   paddlePhysics();
   cameraPhysics();
@@ -412,6 +370,10 @@ function draw() {
   opponentPaddleMovement();
   footerPlaneMovement();
 }
+
+// function textureUpdate(){
+
+// }
 
 function ballPhysics() {
   // if ball goes off the 'left' side (Player's side)
@@ -483,7 +445,8 @@ function opponentPaddleMovement() {
   // this is done because we stretch the paddle at some points
   // stretching is done when paddle touches side of table and when paddle hits ball
   // by doing this here, we ensure paddle always comes back to default size
-  paddle2.scale.y += (1 - paddle2.scale.y) * 0.2;
+  // paddle2.scale.y += (1 - paddle2.scale.y) * 0.2;
+  paddle2.scale.z += (1 - paddle2.scale.z) * 0.2;
 }
 
 function map(x, in_min, in_max, out_min, out_max) {
@@ -630,7 +593,8 @@ function paddlePhysics() {
       // and if ball is travelling towards player (-ve direction)
       if (ballDirX < 0) {
         // stretch the paddle to indicate a hit
-        paddle1.scale.y = 15;
+        paddle1.scale.z = 2;
+        // paddle1.scale.y = 15; removed this
         // switch direction of ball travel to create bounce
         ballDirX = -ballDirX;
         // we impact ball angle when hitting it
@@ -658,7 +622,8 @@ function paddlePhysics() {
       // and if ball is travelling towards opponent (+ve direction)
       if (ballDirX > 0) {
         // stretch the paddle to indicate a hit
-        paddle2.scale.y = 15;
+        paddle2.scale.z = 2;
+        // paddle2.scale.y = 15; //removed this
         // switch direction of ball travel to create bounce
         ballDirX = -ballDirX;
         // we impact ball angle when hitting it
